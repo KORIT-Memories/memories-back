@@ -11,9 +11,12 @@ import com.ach.memories_back.common.dto.request.diary.PatchDiaryRequestDto;
 import com.ach.memories_back.common.dto.request.diary.PostDiaryRequestDto;
 import com.ach.memories_back.common.dto.response.ResponseDto;
 import com.ach.memories_back.common.dto.response.diary.GetDiaryResponseDto;
+import com.ach.memories_back.common.dto.response.diary.GetEmpathyResponseDto;
 import com.ach.memories_back.common.dto.response.diary.GetMyDiaryResponseDto;
 import com.ach.memories_back.common.entity.DiaryEntity;
+import com.ach.memories_back.common.entity.EmpathyEntity;
 import com.ach.memories_back.repository.DiaryRepository;
+import com.ach.memories_back.repository.EmpathyRespository;
 import com.ach.memories_back.service.DiaryService;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class DiaryServiceImplement implements DiaryService {
 
     private final DiaryRepository diaryRepository;
+    private final EmpathyRespository empathyRespository;
 
     @Override
     public ResponseEntity<ResponseDto> postDiary(PostDiaryRequestDto dto, String userId) {
@@ -48,7 +52,7 @@ public class DiaryServiceImplement implements DiaryService {
         
         try {
             
-            diaryEntities = diaryRepository.findByUserIdOrderByWriteDateDesc(userId);
+            diaryEntities = diaryRepository.findByOrderByDiaryNumberDesc();
             
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -120,5 +124,45 @@ public class DiaryServiceImplement implements DiaryService {
 
         return ResponseDto.success(HttpStatus.OK);
     }
+
+    @Override
+    public ResponseEntity<? super GetEmpathyResponseDto> getEmpathy(Integer diaryNumber) {
+
+        List<EmpathyEntity> empathyEntities = new ArrayList<>();
+        
+        try {
+
+            empathyEntities = empathyRespository.findByDiaryNumber(diaryNumber);
+            
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            return ResponseDto.databaseError();
+        }
+
+        return GetEmpathyResponseDto.success(empathyEntities);
+    }
+
+    @Override
+    public ResponseEntity<ResponseDto> putEmpathy(Integer diaryNumber, String userId) {
+        
+        try {
+
+            EmpathyEntity empathyEntity = empathyRespository.findByUserIdAndDiaryNumber(userId, diaryNumber);
+            if (empathyEntity == null) {
+                empathyEntity = new EmpathyEntity(userId, diaryNumber);
+                empathyRespository.save(empathyEntity);
+            }   else {
+                empathyRespository.delete(empathyEntity);
+            }
+            
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            return ResponseDto.databaseError();
+        }
+
+        return ResponseDto.success(HttpStatus.OK);
+    }
+
+
     
 }
